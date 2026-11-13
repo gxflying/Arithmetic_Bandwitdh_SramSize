@@ -1,0 +1,2510 @@
+{
+  "hardware": {
+    "ddr_gbs": 512,
+    "tensor_tflops": 128,
+    "add_tops": 2,
+    "mul_tops": 2,
+    "exp_tops": 0.25,
+    "reduce_tops": 1,
+    "inv_tops": 0.125,
+    "sram_tbs": 8,
+    "sram_kib": 512
+  },
+  "model": {
+    "layers": 28,
+    "hidden": 3584,
+    "ffn": 18944,
+    "heads": 28,
+    "kv_heads": 4,
+    "dim": 128,
+    "vocab": 152064,
+    "weight_bytes": 2,
+    "act_bytes": 2,
+    "kv_bytes": 2
+  },
+  "groups": {
+    "decode_1": [
+      [
+        [
+          1,
+          1,
+          4096
+        ]
+      ],
+      1
+    ],
+    "decode_32": [
+      [
+        [
+          32,
+          1,
+          4096
+        ]
+      ],
+      32
+    ],
+    "decode_64": [
+      [
+        [
+          64,
+          1,
+          4096
+        ]
+      ],
+      64
+    ],
+    "decode_32_long": [
+      [
+        [
+          32,
+          1,
+          16384
+        ]
+      ],
+      32
+    ],
+    "prefill_2048": [
+      [
+        [
+          1,
+          2048,
+          0
+        ]
+      ],
+      1
+    ],
+    "mixed_32_plus_256": [
+      [
+        [
+          32,
+          1,
+          4096
+        ],
+        [
+          1,
+          256,
+          2048
+        ]
+      ],
+      32
+    ]
+  },
+  "baseline": {
+    "decode_1": {
+      "scheduled_tokens": 1,
+      "causal_pairs_per_head": 4097,
+      "logit_rows": 1,
+      "tile_budget_bytes": 524288.0,
+      "resident_tiles": 1,
+      "panel_k": 64,
+      "reserve_kib": 0,
+      "seconds": 0.0281003500078125,
+      "scheduled_tokens_per_s": 35.58674535092903,
+      "aggregate_floor_s": 0.0281003500078125,
+      "work": {
+        "ddr": 14387379204,
+        "sram": 29714738376,
+        "mul": 6833737,
+        "add": 5817673,
+        "reduce": 6766278,
+        "inv": 531273,
+        "tensor": 15785140224,
+        "exp": 3755024
+      },
+      "stage_limiting_seconds": {
+        "ddr": 0.0281003500078125
+      },
+      "stages": [
+        {
+          "name": "embedding_gather",
+          "repeat": 1,
+          "seconds": 2.8e-08,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 14336,
+            "sram": 28672
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "attention_rmsnorm",
+          "repeat": 28,
+          "seconds": 4.2e-08,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 21504,
+            "sram": 50176,
+            "mul": 10753,
+            "add": 1,
+            "reduce": 3583,
+            "inv": 1
+          },
+          "tile": {},
+          "footprint_bytes": 15360
+        },
+        {
+          "name": "qkv",
+          "repeat": 28,
+          "seconds": 6.4544e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 33046528,
+            "sram": 68149248,
+            "tensor": 33030144
+          },
+          "tile": {
+            "m": 1,
+            "n": 1024,
+            "k": 64,
+            "policy": "keep_input_strip",
+            "weight_bytes": 33030144
+          },
+          "footprint_bytes": 280576
+        },
+        {
+          "name": "bias_rope_kv_append",
+          "repeat": 28,
+          "seconds": 5.45e-08,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 27904,
+            "sram": 71936,
+            "add": 8704,
+            "mul": 8192
+          },
+          "tile": {},
+          "footprint_bytes": 10496
+        },
+        {
+          "name": "attention",
+          "repeat": 28,
+          "seconds": 1.6416e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 8404992,
+            "sram": 18767184,
+            "tensor": 58734592,
+            "add": 172956,
+            "mul": 176092,
+            "exp": 115164,
+            "reduce": 228928,
+            "inv": 28
+          },
+          "tile": {
+            "q": 1,
+            "k": 256,
+            "q_heads": 7,
+            "kv_read_bytes": 8390656,
+            "executed_scores": 114716,
+            "row_tile_visits": 476
+          },
+          "footprint_bytes": 274744
+        },
+        {
+          "name": "attention_out",
+          "repeat": 28,
+          "seconds": 5.0204e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 25704448,
+            "sram": 53007360,
+            "tensor": 25690112
+          },
+          "tile": {
+            "m": 1,
+            "n": 1024,
+            "k": 64,
+            "policy": "keep_input_strip",
+            "weight_bytes": 25690112
+          },
+          "footprint_bytes": 280576
+        },
+        {
+          "name": "attention_residual",
+          "repeat": 28,
+          "seconds": 4.2e-08,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 21504,
+            "sram": 43008,
+            "add": 3584
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "ffn_rmsnorm",
+          "repeat": 28,
+          "seconds": 4.2e-08,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 21504,
+            "sram": 50176,
+            "mul": 10753,
+            "add": 1,
+            "reduce": 3583,
+            "inv": 1
+          },
+          "tile": {},
+          "footprint_bytes": 15360
+        },
+        {
+          "name": "gate_up",
+          "repeat": 28,
+          "seconds": 0.000530594,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 271664128,
+            "sram": 560257024,
+            "tensor": 271581184
+          },
+          "tile": {
+            "m": 1,
+            "n": 1024,
+            "k": 64,
+            "policy": "keep_input_strip",
+            "weight_bytes": 271581184
+          },
+          "footprint_bytes": 280576
+        },
+        {
+          "name": "swiglu",
+          "repeat": 28,
+          "seconds": 2.22e-07,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 113664,
+            "sram": 227328,
+            "mul": 37888,
+            "exp": 18944,
+            "add": 18944,
+            "inv": 18944
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "down",
+          "repeat": 28,
+          "seconds": 0.000265304,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 135835648,
+            "sram": 280243200,
+            "tensor": 135790592
+          },
+          "tile": {
+            "m": 1,
+            "n": 1024,
+            "k": 64,
+            "policy": "keep_input_strip",
+            "weight_bytes": 135790592
+          },
+          "footprint_bytes": 342016
+        },
+        {
+          "name": "ffn_residual",
+          "repeat": 28,
+          "seconds": 4.2e-08,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 21504,
+            "sram": 43008,
+            "add": 3584
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "final_rmsnorm",
+          "repeat": 1,
+          "seconds": 4.2e-08,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 21504,
+            "sram": 50176,
+            "mul": 10753,
+            "add": 1,
+            "reduce": 3583,
+            "inv": 1
+          },
+          "tile": {},
+          "footprint_bytes": 15360
+        },
+        {
+          "name": "lm_head",
+          "repeat": 1,
+          "seconds": 0.002129504,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 1090306048,
+            "sram": 2248581120,
+            "tensor": 1089994752
+          },
+          "tile": {
+            "m": 1,
+            "n": 1024,
+            "k": 64,
+            "policy": "keep_input_strip",
+            "weight_bytes": 1089994752
+          },
+          "footprint_bytes": 280576
+        },
+        {
+          "name": "greedy_argmax",
+          "repeat": 1,
+          "seconds": 5.940078125e-07,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 304132,
+            "sram": 608264,
+            "reduce": 152063
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        }
+      ]
+    },
+    "decode_32": {
+      "scheduled_tokens": 32,
+      "causal_pairs_per_head": 131104,
+      "logit_rows": 32,
+      "tile_budget_bytes": 524288.0,
+      "resident_tiles": 1,
+      "panel_k": 64,
+      "reserve_kib": 0,
+      "seconds": 0.043202326250000006,
+      "scheduled_tokens_per_s": 740.7008551998979,
+      "aggregate_floor_s": 0.04320232625,
+      "work": {
+        "ddr": 22119591040,
+        "sram": 76492358912,
+        "mul": 218679584,
+        "add": 186165536,
+        "reduce": 216520896,
+        "inv": 17000736,
+        "tensor": 505124487168,
+        "exp": 120160768
+      },
+      "stage_limiting_seconds": {
+        "ddr": 0.043202326250000006
+      },
+      "stages": [
+        {
+          "name": "embedding_gather",
+          "repeat": 1,
+          "seconds": 8.96e-07,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 458752,
+            "sram": 917504
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "attention_rmsnorm",
+          "repeat": 28,
+          "seconds": 9.1e-07,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 465920,
+            "sram": 1383424,
+            "mul": 344096,
+            "add": 32,
+            "reduce": 114656,
+            "inv": 32
+          },
+          "tile": {},
+          "footprint_bytes": 15360
+        },
+        {
+          "name": "qkv",
+          "repeat": 28,
+          "seconds": 6.5536e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 33554432,
+            "sram": 140017664,
+            "tensor": 1056964608
+          },
+          "tile": {
+            "m": 32,
+            "n": 128,
+            "k": 64,
+            "policy": "keep_input_strip",
+            "weight_bytes": 33030144
+          },
+          "footprint_bytes": 507904
+        },
+        {
+          "name": "bias_rope_kv_append",
+          "repeat": 28,
+          "seconds": 1.186e-06,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 607232,
+            "sram": 2016256,
+            "add": 278528,
+            "mul": 262144
+          },
+          "tile": {},
+          "footprint_bytes": 10496
+        },
+        {
+          "name": "attention",
+          "repeat": 28,
+          "seconds": 0.000525312,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 268959744,
+            "sram": 600549888,
+            "tensor": 1879506944,
+            "add": 5534592,
+            "mul": 5634944,
+            "exp": 3685248,
+            "reduce": 7325696,
+            "inv": 896
+          },
+          "tile": {
+            "q": 1,
+            "k": 256,
+            "q_heads": 7,
+            "kv_read_bytes": 268500992,
+            "executed_scores": 3670912,
+            "row_tile_visits": 15232
+          },
+          "footprint_bytes": 274744
+        },
+        {
+          "name": "attention_out",
+          "repeat": 28,
+          "seconds": 5.1072e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 26148864,
+            "sram": 108953600,
+            "tensor": 822083584
+          },
+          "tile": {
+            "m": 32,
+            "n": 128,
+            "k": 64,
+            "policy": "keep_input_strip",
+            "weight_bytes": 25690112
+          },
+          "footprint_bytes": 507904
+        },
+        {
+          "name": "attention_residual",
+          "repeat": 28,
+          "seconds": 1.344e-06,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 688128,
+            "sram": 1376256,
+            "add": 114688
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "ffn_rmsnorm",
+          "repeat": 28,
+          "seconds": 9.1e-07,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 465920,
+            "sram": 1383424,
+            "mul": 344096,
+            "add": 32,
+            "reduce": 114656,
+            "inv": 32
+          },
+          "tile": {},
+          "footprint_bytes": 15360
+        },
+        {
+          "name": "gate_up",
+          "repeat": 28,
+          "seconds": 0.000535616,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 274235392,
+            "sram": 1149599744,
+            "tensor": 8690597888
+          },
+          "tile": {
+            "m": 32,
+            "n": 128,
+            "k": 64,
+            "policy": "keep_input_strip",
+            "weight_bytes": 271581184
+          },
+          "footprint_bytes": 507904
+        },
+        {
+          "name": "swiglu",
+          "repeat": 28,
+          "seconds": 7.104e-06,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 3637248,
+            "sram": 7274496,
+            "mul": 1212416,
+            "exp": 606208,
+            "add": 606208,
+            "inv": 606208
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "down",
+          "repeat": 28,
+          "seconds": 0.000275136,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 140869632,
+            "sram": 552402944,
+            "tensor": 4345298944
+          },
+          "tile": {
+            "m": 32,
+            "n": 1024,
+            "k": 64,
+            "policy": "stream_panels",
+            "weight_bytes": 135790592
+          },
+          "footprint_bytes": 401408
+        },
+        {
+          "name": "ffn_residual",
+          "repeat": 28,
+          "seconds": 1.344e-06,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 688128,
+            "sram": 1376256,
+            "add": 114688
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "final_rmsnorm",
+          "repeat": 1,
+          "seconds": 9.1e-07,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 465920,
+            "sram": 1383424,
+            "mul": 344096,
+            "add": 32,
+            "reduce": 114656,
+            "inv": 32
+          },
+          "tile": {},
+          "footprint_bytes": 15360
+        },
+        {
+          "name": "lm_head",
+          "repeat": 1,
+          "seconds": 0.002148352,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 1099956224,
+            "sram": 4613242880,
+            "tensor": 34879832064
+          },
+          "tile": {
+            "m": 32,
+            "n": 128,
+            "k": 64,
+            "policy": "keep_input_strip",
+            "weight_bytes": 1089994752
+          },
+          "footprint_bytes": 507904
+        },
+        {
+          "name": "greedy_argmax",
+          "repeat": 1,
+          "seconds": 1.900825e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 9732224,
+            "sram": 19464448,
+            "reduce": 4866016
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        }
+      ]
+    },
+    "decode_64": {
+      "scheduled_tokens": 64,
+      "causal_pairs_per_head": 262208,
+      "logit_rows": 64,
+      "tile_budget_bytes": 524288.0,
+      "resident_tiles": 1,
+      "panel_k": 64,
+      "reserve_kib": 0,
+      "seconds": 0.061630742499999995,
+      "scheduled_tokens_per_s": 1038.4427868932457,
+      "aggregate_floor_s": 0.0616307425,
+      "work": {
+        "ddr": 31554940160,
+        "sram": 122486676992,
+        "mul": 437359168,
+        "add": 372331072,
+        "reduce": 433041792,
+        "inv": 34001472,
+        "tensor": 1010248974336,
+        "exp": 240321536
+      },
+      "stage_limiting_seconds": {
+        "ddr": 0.061630742499999995
+      },
+      "stages": [
+        {
+          "name": "embedding_gather",
+          "repeat": 1,
+          "seconds": 1.792e-06,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 917504,
+            "sram": 1835008
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "attention_rmsnorm",
+          "repeat": 28,
+          "seconds": 1.806e-06,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 924672,
+            "sram": 2759680,
+            "mul": 688192,
+            "add": 64,
+            "reduce": 229312,
+            "inv": 64
+          },
+          "tile": {},
+          "footprint_bytes": 15360
+        },
+        {
+          "name": "qkv",
+          "repeat": 28,
+          "seconds": 7.3728e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 37748736,
+            "sram": 205258752,
+            "tensor": 2113929216
+          },
+          "tile": {
+            "m": 64,
+            "n": 512,
+            "k": 64,
+            "policy": "stream_panels",
+            "weight_bytes": 33030144
+          },
+          "footprint_bytes": 278528
+        },
+        {
+          "name": "bias_rope_kv_append",
+          "repeat": 28,
+          "seconds": 2.354e-06,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 1205248,
+            "sram": 4023296,
+            "add": 557056,
+            "mul": 524288
+          },
+          "tile": {},
+          "footprint_bytes": 10496
+        },
+        {
+          "name": "attention",
+          "repeat": 28,
+          "seconds": 0.001050624,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 537919488,
+            "sram": 1201099776,
+            "tensor": 3759013888,
+            "add": 11069184,
+            "mul": 11269888,
+            "exp": 7370496,
+            "reduce": 14651392,
+            "inv": 1792
+          },
+          "tile": {
+            "q": 1,
+            "k": 256,
+            "q_heads": 7,
+            "kv_read_bytes": 537001984,
+            "executed_scores": 7341824,
+            "row_tile_visits": 30464
+          },
+          "footprint_bytes": 274744
+        },
+        {
+          "name": "attention_out",
+          "repeat": 28,
+          "seconds": 5.7344e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 29360128,
+            "sram": 159645696,
+            "tensor": 1644167168
+          },
+          "tile": {
+            "m": 64,
+            "n": 512,
+            "k": 64,
+            "policy": "stream_panels",
+            "weight_bytes": 25690112
+          },
+          "footprint_bytes": 278528
+        },
+        {
+          "name": "attention_residual",
+          "repeat": 28,
+          "seconds": 2.688e-06,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 1376256,
+            "sram": 2752512,
+            "add": 229376
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "ffn_rmsnorm",
+          "repeat": 28,
+          "seconds": 1.806e-06,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 924672,
+            "sram": 2759680,
+            "mul": 688192,
+            "add": 64,
+            "reduce": 229312,
+            "inv": 64
+          },
+          "tile": {},
+          "footprint_bytes": 15360
+        },
+        {
+          "name": "gate_up",
+          "repeat": 28,
+          "seconds": 0.000606208,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 310378496,
+            "sram": 1687683072,
+            "tensor": 17381195776
+          },
+          "tile": {
+            "m": 64,
+            "n": 512,
+            "k": 64,
+            "policy": "stream_panels",
+            "weight_bytes": 271581184
+          },
+          "footprint_bytes": 278528
+        },
+        {
+          "name": "swiglu",
+          "repeat": 28,
+          "seconds": 1.4208e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 7274496,
+            "sram": 14548992,
+            "mul": 2424832,
+            "exp": 1212416,
+            "add": 1212416,
+            "inv": 1212416
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "down",
+          "repeat": 28,
+          "seconds": 0.000299264,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 153223168,
+            "sram": 847773696,
+            "tensor": 8690597888
+          },
+          "tile": {
+            "m": 64,
+            "n": 512,
+            "k": 64,
+            "policy": "stream_panels",
+            "weight_bytes": 135790592
+          },
+          "footprint_bytes": 278528
+        },
+        {
+          "name": "ffn_residual",
+          "repeat": 28,
+          "seconds": 2.688e-06,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 1376256,
+            "sram": 2752512,
+            "add": 229376
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "final_rmsnorm",
+          "repeat": 1,
+          "seconds": 1.806e-06,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 924672,
+            "sram": 2759680,
+            "mul": 688192,
+            "add": 64,
+            "reduce": 229312,
+            "inv": 64
+          },
+          "tile": {},
+          "footprint_bytes": 15360
+        },
+        {
+          "name": "lm_head",
+          "repeat": 1,
+          "seconds": 0.002433024,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 1245708288,
+            "sram": 6773538816,
+            "tensor": 69759664128
+          },
+          "tile": {
+            "m": 64,
+            "n": 512,
+            "k": 64,
+            "policy": "stream_panels",
+            "weight_bytes": 1089994752
+          },
+          "footprint_bytes": 278528
+        },
+        {
+          "name": "greedy_argmax",
+          "repeat": 1,
+          "seconds": 3.80165e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 19464448,
+            "sram": 38928896,
+            "reduce": 9732032
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        }
+      ]
+    },
+    "decode_32_long": {
+      "scheduled_tokens": 32,
+      "causal_pairs_per_head": 524320,
+      "logit_rows": 32,
+      "tile_budget_bytes": 524288.0,
+      "resident_tiles": 1,
+      "panel_k": 64,
+      "reserve_kib": 0,
+      "seconds": 0.08724251825000001,
+      "scheduled_tokens_per_s": 366.7936304669885,
+      "aggregate_floor_s": 0.08724251825,
+      "work": {
+        "ddr": 44668169344,
+        "sram": 126849565952,
+        "mul": 682305824,
+        "add": 650996000,
+        "reduce": 831879360,
+        "inv": 17000736,
+        "tensor": 662964535296,
+        "exp": 429646336
+      },
+      "stage_limiting_seconds": {
+        "ddr": 0.08724251825000001
+      },
+      "stages": [
+        {
+          "name": "embedding_gather",
+          "repeat": 1,
+          "seconds": 8.96e-07,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 458752,
+            "sram": 917504
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "attention_rmsnorm",
+          "repeat": 28,
+          "seconds": 9.1e-07,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 465920,
+            "sram": 1383424,
+            "mul": 344096,
+            "add": 32,
+            "reduce": 114656,
+            "inv": 32
+          },
+          "tile": {},
+          "footprint_bytes": 15360
+        },
+        {
+          "name": "qkv",
+          "repeat": 28,
+          "seconds": 6.5536e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 33554432,
+            "sram": 140017664,
+            "tensor": 1056964608
+          },
+          "tile": {
+            "m": 32,
+            "n": 128,
+            "k": 64,
+            "policy": "keep_input_strip",
+            "weight_bytes": 33030144
+          },
+          "footprint_bytes": 507904
+        },
+        {
+          "name": "bias_rope_kv_append",
+          "repeat": 28,
+          "seconds": 1.186e-06,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 607232,
+            "sram": 2016256,
+            "add": 278528,
+            "mul": 262144
+          },
+          "tile": {},
+          "footprint_bytes": 10496
+        },
+        {
+          "name": "attention",
+          "repeat": 28,
+          "seconds": 0.002098176,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 1074266112,
+            "sram": 2399021568,
+            "tensor": 7516651520,
+            "add": 22135680,
+            "mul": 22193024,
+            "exp": 14738304,
+            "reduce": 29302784,
+            "inv": 896
+          },
+          "tile": {
+            "q": 1,
+            "k": 256,
+            "q_heads": 7,
+            "kv_read_bytes": 1073807360,
+            "executed_scores": 14680960,
+            "row_tile_visits": 58240
+          },
+          "footprint_bytes": 274744
+        },
+        {
+          "name": "attention_out",
+          "repeat": 28,
+          "seconds": 5.1072e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 26148864,
+            "sram": 108953600,
+            "tensor": 822083584
+          },
+          "tile": {
+            "m": 32,
+            "n": 128,
+            "k": 64,
+            "policy": "keep_input_strip",
+            "weight_bytes": 25690112
+          },
+          "footprint_bytes": 507904
+        },
+        {
+          "name": "attention_residual",
+          "repeat": 28,
+          "seconds": 1.344e-06,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 688128,
+            "sram": 1376256,
+            "add": 114688
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "ffn_rmsnorm",
+          "repeat": 28,
+          "seconds": 9.1e-07,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 465920,
+            "sram": 1383424,
+            "mul": 344096,
+            "add": 32,
+            "reduce": 114656,
+            "inv": 32
+          },
+          "tile": {},
+          "footprint_bytes": 15360
+        },
+        {
+          "name": "gate_up",
+          "repeat": 28,
+          "seconds": 0.000535616,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 274235392,
+            "sram": 1149599744,
+            "tensor": 8690597888
+          },
+          "tile": {
+            "m": 32,
+            "n": 128,
+            "k": 64,
+            "policy": "keep_input_strip",
+            "weight_bytes": 271581184
+          },
+          "footprint_bytes": 507904
+        },
+        {
+          "name": "swiglu",
+          "repeat": 28,
+          "seconds": 7.104e-06,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 3637248,
+            "sram": 7274496,
+            "mul": 1212416,
+            "exp": 606208,
+            "add": 606208,
+            "inv": 606208
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "down",
+          "repeat": 28,
+          "seconds": 0.000275136,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 140869632,
+            "sram": 552402944,
+            "tensor": 4345298944
+          },
+          "tile": {
+            "m": 32,
+            "n": 1024,
+            "k": 64,
+            "policy": "stream_panels",
+            "weight_bytes": 135790592
+          },
+          "footprint_bytes": 401408
+        },
+        {
+          "name": "ffn_residual",
+          "repeat": 28,
+          "seconds": 1.344e-06,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 688128,
+            "sram": 1376256,
+            "add": 114688
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "final_rmsnorm",
+          "repeat": 1,
+          "seconds": 9.1e-07,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 465920,
+            "sram": 1383424,
+            "mul": 344096,
+            "add": 32,
+            "reduce": 114656,
+            "inv": 32
+          },
+          "tile": {},
+          "footprint_bytes": 15360
+        },
+        {
+          "name": "lm_head",
+          "repeat": 1,
+          "seconds": 0.002148352,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 1099956224,
+            "sram": 4613242880,
+            "tensor": 34879832064
+          },
+          "tile": {
+            "m": 32,
+            "n": 128,
+            "k": 64,
+            "policy": "keep_input_strip",
+            "weight_bytes": 1089994752
+          },
+          "footprint_bytes": 507904
+        },
+        {
+          "name": "greedy_argmax",
+          "repeat": 1,
+          "seconds": 1.900825e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 9732224,
+            "sram": 19464448,
+            "reduce": 4866016
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        }
+      ]
+    },
+    "prefill_2048": {
+      "scheduled_tokens": 2048,
+      "causal_pairs_per_head": 2098176,
+      "logit_rows": 1,
+      "tile_budget_bytes": 524288.0,
+      "resident_tiles": 1,
+      "panel_k": 64,
+      "reserve_kib": 0,
+      "seconds": 0.4528265960078125,
+      "scheduled_tokens_per_s": 4522.702548956878,
+      "aggregate_floor_s": 0.4528265960078125,
+      "work": {
+        "ddr": 231847217156,
+        "sram": 2153393077256,
+        "mul": 7587883521,
+        "add": 5516148737,
+        "reduce": 4094402558,
+        "inv": 1088045057,
+        "tensor": 27675711766528,
+        "exp": 2948857856
+      },
+      "stage_limiting_seconds": {
+        "ddr": 0.4528265960078125
+      },
+      "stages": [
+        {
+          "name": "embedding_gather",
+          "repeat": 1,
+          "seconds": 5.7344e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 29360128,
+            "sram": 58720256
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "attention_rmsnorm",
+          "repeat": 28,
+          "seconds": 5.7358e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 29367296,
+            "sram": 88087552,
+            "mul": 22022144,
+            "add": 2048,
+            "reduce": 7337984,
+            "inv": 2048
+          },
+          "tile": {},
+          "footprint_bytes": 15360
+        },
+        {
+          "name": "qkv",
+          "repeat": 28,
+          "seconds": 0.001069056,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 547356672,
+            "sram": 5247074304,
+            "tensor": 67645734912
+          },
+          "tile": {
+            "m": 256,
+            "n": 256,
+            "k": 64,
+            "policy": "stream_panels",
+            "weight_bytes": 264241152
+          },
+          "footprint_bytes": 393216
+        },
+        {
+          "name": "bias_rope_kv_append",
+          "repeat": 28,
+          "seconds": 7.477e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 38282240,
+            "sram": 128459776,
+            "add": 17825792,
+            "mul": 16777216
+          },
+          "tile": {},
+          "footprint_bytes": 10496
+        },
+        {
+          "name": "attention",
+          "repeat": 28,
+          "seconds": 0.000315392,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 161480704,
+            "sram": 1710227456,
+            "tensor": 33822867456,
+            "add": 125698048,
+            "mul": 132579328,
+            "exp": 66519040,
+            "reduce": 131547136,
+            "inv": 57344
+          },
+          "tile": {
+            "q": 256,
+            "k": 128,
+            "q_heads": 1,
+            "kv_read_bytes": 132120576,
+            "executed_scores": 66060288,
+            "row_tile_visits": 516096
+          },
+          "footprint_bytes": 460800
+        },
+        {
+          "name": "attention_out",
+          "repeat": 28,
+          "seconds": 0.000831488,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 425721856,
+            "sram": 4081057792,
+            "tensor": 52613349376
+          },
+          "tile": {
+            "m": 256,
+            "n": 256,
+            "k": 64,
+            "policy": "stream_panels",
+            "weight_bytes": 205520896
+          },
+          "footprint_bytes": 393216
+        },
+        {
+          "name": "attention_residual",
+          "repeat": 28,
+          "seconds": 8.6016e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 44040192,
+            "sram": 88080384,
+            "add": 7340032
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "ffn_rmsnorm",
+          "repeat": 28,
+          "seconds": 5.7358e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 29367296,
+            "sram": 88087552,
+            "mul": 22022144,
+            "add": 2048,
+            "reduce": 7337984,
+            "inv": 2048
+          },
+          "tile": {},
+          "footprint_bytes": 15360
+        },
+        {
+          "name": "gate_up",
+          "repeat": 28,
+          "seconds": 0.008790016,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 4500488192,
+            "sram": 43142610944,
+            "tensor": 556198264832
+          },
+          "tile": {
+            "m": 256,
+            "n": 256,
+            "k": 64,
+            "policy": "stream_panels",
+            "weight_bytes": 2172649472
+          },
+          "footprint_bytes": 393216
+        },
+        {
+          "name": "swiglu",
+          "repeat": 28,
+          "seconds": 0.000454656,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 232783872,
+            "sram": 465567744,
+            "mul": 77594624,
+            "exp": 38797312,
+            "add": 38797312,
+            "inv": 38797312
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "down",
+          "repeat": 28,
+          "seconds": 0.004272128,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 2187329536,
+            "sram": 21697134592,
+            "tensor": 278099132416
+          },
+          "tile": {
+            "m": 256,
+            "n": 256,
+            "k": 64,
+            "policy": "stream_panels",
+            "weight_bytes": 1086324736
+          },
+          "footprint_bytes": 393216
+        },
+        {
+          "name": "ffn_residual",
+          "repeat": 28,
+          "seconds": 8.6016e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 44040192,
+            "sram": 88080384,
+            "add": 7340032
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "final_rmsnorm",
+          "repeat": 1,
+          "seconds": 4.2e-08,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 21504,
+            "sram": 50176,
+            "mul": 10753,
+            "add": 1,
+            "reduce": 3583,
+            "inv": 1
+          },
+          "tile": {},
+          "footprint_bytes": 15360
+        },
+        {
+          "name": "lm_head",
+          "repeat": 1,
+          "seconds": 0.002129504,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 1090306048,
+            "sram": 2248581120,
+            "tensor": 1089994752
+          },
+          "tile": {
+            "m": 1,
+            "n": 1024,
+            "k": 64,
+            "policy": "keep_input_strip",
+            "weight_bytes": 1089994752
+          },
+          "footprint_bytes": 280576
+        },
+        {
+          "name": "greedy_argmax",
+          "repeat": 1,
+          "seconds": 5.940078125e-07,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 304132,
+            "sram": 608264,
+            "reduce": 152063
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        }
+      ]
+    },
+    "mixed_32_plus_256": {
+      "scheduled_tokens": 288,
+      "causal_pairs_per_head": 688288,
+      "logit_rows": 32,
+      "tile_budget_bytes": 524288.0,
+      "resident_tiles": 1,
+      "panel_k": 64,
+      "reserve_kib": 0,
+      "seconds": 0.07701915825000001,
+      "scheduled_tokens_per_s": 3739.3293635483215,
+      "aggregate_floor_s": 0.07701915825,
+      "work": {
+        "ddr": 39433809024,
+        "sram": 341823505664,
+        "mul": 3295027488,
+        "add": 3018400032,
+        "reduce": 1137336512,
+        "inv": 153006368,
+        "tensor": 4072967241728,
+        "exp": 715563520
+      },
+      "stage_limiting_seconds": {
+        "ddr": 0.07701915825000001
+      },
+      "stages": [
+        {
+          "name": "embedding_gather",
+          "repeat": 1,
+          "seconds": 8.064e-06,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 4128768,
+            "sram": 8257536
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "attention_rmsnorm",
+          "repeat": 28,
+          "seconds": 8.078e-06,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 4135936,
+            "sram": 12393472,
+            "mul": 3096864,
+            "add": 288,
+            "reduce": 1031904,
+            "inv": 288
+          },
+          "tile": {},
+          "footprint_bytes": 15360
+        },
+        {
+          "name": "qkv",
+          "repeat": 28,
+          "seconds": 0.000142272,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 72843264,
+            "sram": 729612288,
+            "tensor": 9512681472
+          },
+          "tile": {
+            "m": 288,
+            "n": 256,
+            "k": 64,
+            "policy": "stream_panels",
+            "weight_bytes": 33030144
+          },
+          "footprint_bytes": 434176
+        },
+        {
+          "name": "bias_rope_kv_append",
+          "repeat": 28,
+          "seconds": 1.053e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 5391360,
+            "sram": 18072576,
+            "add": 2506752,
+            "mul": 2359296
+          },
+          "tile": {},
+          "footprint_bytes": 10496
+        },
+        {
+          "name": "attention",
+          "repeat": 28,
+          "seconds": 0.000567808,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 290717696,
+            "sram": 1595746816,
+            "tensor": 9982902272,
+            "add": 97772416,
+            "mul": 98202496,
+            "exp": 20099968,
+            "reduce": 38377472,
+            "inv": 8064
+          },
+          "tile": {
+            "q": 64,
+            "k": 32,
+            "q_heads": 7,
+            "kv_read_bytes": 286588928,
+            "executed_scores": 19497856,
+            "row_tile_visits": 610176
+          },
+          "footprint_bytes": 437760
+        },
+        {
+          "name": "attention_out",
+          "repeat": 28,
+          "seconds": 0.000110656,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 56655872,
+            "sram": 567476224,
+            "tensor": 7398752256
+          },
+          "tile": {
+            "m": 288,
+            "n": 256,
+            "k": 64,
+            "policy": "stream_panels",
+            "weight_bytes": 25690112
+          },
+          "footprint_bytes": 434176
+        },
+        {
+          "name": "attention_residual",
+          "repeat": 28,
+          "seconds": 1.2096e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 6193152,
+            "sram": 12386304,
+            "add": 1032192
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "ffn_rmsnorm",
+          "repeat": 28,
+          "seconds": 8.078e-06,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 4135936,
+            "sram": 12393472,
+            "mul": 3096864,
+            "add": 288,
+            "reduce": 1031904,
+            "inv": 288
+          },
+          "tile": {},
+          "footprint_bytes": 15360
+        },
+        {
+          "name": "gate_up",
+          "repeat": 28,
+          "seconds": 0.001169792,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 598933504,
+            "sram": 5999034368,
+            "tensor": 78215380992
+          },
+          "tile": {
+            "m": 288,
+            "n": 256,
+            "k": 64,
+            "policy": "stream_panels",
+            "weight_bytes": 271581184
+          },
+          "footprint_bytes": 434176
+        },
+        {
+          "name": "swiglu",
+          "repeat": 28,
+          "seconds": 6.3936e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 32735232,
+            "sram": 65470464,
+            "mul": 10911744,
+            "exp": 5455872,
+            "add": 5455872,
+            "inv": 5455872
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "down",
+          "repeat": 28,
+          "seconds": 0.000567616,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 290619392,
+            "sram": 3017211904,
+            "tensor": 39107690496
+          },
+          "tile": {
+            "m": 288,
+            "n": 256,
+            "k": 64,
+            "policy": "stream_panels",
+            "weight_bytes": 135790592
+          },
+          "footprint_bytes": 434176
+        },
+        {
+          "name": "ffn_residual",
+          "repeat": 28,
+          "seconds": 1.2096e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 6193152,
+            "sram": 12386304,
+            "add": 1032192
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        },
+        {
+          "name": "final_rmsnorm",
+          "repeat": 1,
+          "seconds": 9.1e-07,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 465920,
+            "sram": 1383424,
+            "mul": 344096,
+            "add": 32,
+            "reduce": 114656,
+            "inv": 32
+          },
+          "tile": {},
+          "footprint_bytes": 15360
+        },
+        {
+          "name": "lm_head",
+          "repeat": 1,
+          "seconds": 0.002148352,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 1099956224,
+            "sram": 4613242880,
+            "tensor": 34879832064
+          },
+          "tile": {
+            "m": 32,
+            "n": 128,
+            "k": 64,
+            "policy": "keep_input_strip",
+            "weight_bytes": 1089994752
+          },
+          "footprint_bytes": 507904
+        },
+        {
+          "name": "greedy_argmax",
+          "repeat": 1,
+          "seconds": 1.900825e-05,
+          "bottleneck": "ddr",
+          "work": {
+            "ddr": 9732224,
+            "sram": 19464448,
+            "reduce": 4866016
+          },
+          "tile": {},
+          "footprint_bytes": 1024
+        }
+      ]
+    }
+  },
+  "capacities_KiB": [
+    32,
+    64,
+    128,
+    256,
+    512,
+    1024,
+    2048,
+    4096
+  ],
+  "performance_changes": {
+    "base": {},
+    "2x_DDR": {
+      "ddr_gbs": 1024
+    },
+    "2x_Tensor": {
+      "tensor_tflops": 256
+    },
+    "half_Tensor": {
+      "tensor_tflops": 64
+    },
+    "2x_SRAM_BW": {
+      "sram_tbs": 16
+    },
+    "4x_capacity": {
+      "sram_kib": 2048
+    },
+    "slow_EXP": {
+      "exp_tops": 0.015625
+    },
+    "slow_reduce": {
+      "reduce_tops": 0.0625
+    },
+    "balanced_prefill": {
+      "ddr_gbs": 1024,
+      "sram_kib": 2048,
+      "sram_tbs": 16
+    }
+  },
+  "comparison": {
+    "fitted_B_s": 1196718738145.28,
+    "flash_decode_heldout_us": 128.8,
+    "flash_decode_measured_us": 106.6,
+    "qwen": [
+      {
+        "prompt": 1,
+        "measured_tok_s": 84.28,
+        "model_tok_s": 84.28,
+        "relative_error": 0.0,
+        "prefill_s": 0.011816167442916187
+      },
+      {
+        "prompt": 6144,
+        "measured_tok_s": 80.7,
+        "model_tok_s": 81.36032400201537,
+        "relative_error": 0.008182453556572211,
+        "prefill_s": 0.2812865060233846
+      },
+      {
+        "prompt": 14336,
+        "measured_tok_s": 77.69,
+        "model_tok_s": 77.49914261275076,
+        "relative_error": -0.002456653201817982,
+        "prefill_s": 0.7318778960869744
+      },
+      {
+        "prompt": 30720,
+        "measured_tok_s": 70.33,
+        "model_tok_s": 70.15292204584922,
+        "relative_error": -0.002517815358321851,
+        "prefill_s": 1.892080242372923
+      }
+    ]
+  },
+  "capacity_sweep": {
+    "decode_1": [
+      {
+        "ms": 28.2143100078125,
+        "aggregate_floor_ms": 28.2143100078125,
+        "ddr_GB": 14.445726724,
+        "sram_GB": 30.223343816,
+        "limiting_ms": {
+          "ddr": 28.2143100078125
+        }
+      },
+      {
+        "ms": 28.156294007812498,
+        "aggregate_floor_ms": 28.156294007812498,
+        "ddr_GB": 14.416022532,
+        "sram_GB": 29.953110216,
+        "limiting_ms": {
+          "ddr": 28.156294007812498
+        }
+      },
+      {
+        "ms": 28.1003500078125,
+        "aggregate_floor_ms": 28.1003500078125,
+        "ddr_GB": 14.387379204,
+        "sram_GB": 29.81905428,
+        "limiting_ms": {
+          "ddr": 28.1003500078125
+        }
+      },
+      {
+        "ms": 28.1003500078125,
+        "aggregate_floor_ms": 28.1003500078125,
+        "ddr_GB": 14.387379204,
+        "sram_GB": 29.744069832,
+        "limiting_ms": {
+          "ddr": 28.1003500078125
+        }
+      },
+      {
+        "ms": 28.1003500078125,
+        "aggregate_floor_ms": 28.1003500078125,
+        "ddr_GB": 14.387379204,
+        "sram_GB": 29.714738376,
+        "limiting_ms": {
+          "ddr": 28.1003500078125
+        }
+      },
+      {
+        "ms": 28.1003500078125,
+        "aggregate_floor_ms": 28.1003500078125,
+        "ddr_GB": 14.387379204,
+        "sram_GB": 29.70640916,
+        "limiting_ms": {
+          "ddr": 28.1003500078125
+        }
+      },
+      {
+        "ms": 28.1003500078125,
+        "aggregate_floor_ms": 28.1003500078125,
+        "ddr_GB": 14.387379204,
+        "sram_GB": 29.704136904,
+        "limiting_ms": {
+          "ddr": 28.1003500078125
+        }
+      },
+      {
+        "ms": 28.1003500078125,
+        "aggregate_floor_ms": 28.1003500078125,
+        "ddr_GB": 14.387379204,
+        "sram_GB": 29.704136904,
+        "limiting_ms": {
+          "ddr": 28.1003500078125
+        }
+      }
+    ],
+    "decode_32": [
+      {
+        "ms": 56.70818225000001,
+        "aggregate_floor_ms": 56.70818225,
+        "ddr_GB": 29.034589312,
+        "sram_GB": 95.560615168,
+        "limiting_ms": {
+          "ddr": 56.70818225000001
+        }
+      },
+      {
+        "ms": 49.80360625,
+        "aggregate_floor_ms": 49.80360625,
+        "ddr_GB": 25.4994464,
+        "sram_GB": 84.3285312,
+        "limiting_ms": {
+          "ddr": 49.80360625
+        }
+      },
+      {
+        "ms": 46.35131825000001,
+        "aggregate_floor_ms": 46.351318250000006,
+        "ddr_GB": 23.731874944,
+        "sram_GB": 78.712489216,
+        "limiting_ms": {
+          "ddr": 46.35131825000001
+        }
+      },
+      {
+        "ms": 44.62517425000001,
+        "aggregate_floor_ms": 44.62517425,
+        "ddr_GB": 22.848089216,
+        "sram_GB": 75.904468224,
+        "limiting_ms": {
+          "ddr": 44.62517425000001
+        }
+      },
+      {
+        "ms": 43.202326250000006,
+        "aggregate_floor_ms": 43.20232625,
+        "ddr_GB": 22.11959104,
+        "sram_GB": 76.492358912,
+        "limiting_ms": {
+          "ddr": 43.202326250000006
+        }
+      },
+      {
+        "ms": 43.06971825000001,
+        "aggregate_floor_ms": 43.06971825,
+        "ddr_GB": 22.051695744,
+        "sram_GB": 74.101572864,
+        "limiting_ms": {
+          "ddr": 43.06971825000001
+        }
+      },
+      {
+        "ms": 43.00341425000001,
+        "aggregate_floor_ms": 43.00341425,
+        "ddr_GB": 22.017748096,
+        "sram_GB": 73.796273408,
+        "limiting_ms": {
+          "ddr": 43.00341425000001
+        }
+      },
+      {
+        "ms": 43.00341425000001,
+        "aggregate_floor_ms": 43.00341425,
+        "ddr_GB": 22.017748096,
+        "sram_GB": 73.796273408,
+        "limiting_ms": {
+          "ddr": 43.00341425000001
+        }
+      }
+    ],
+    "decode_64": [
+      {
+        "ms": 113.4150625,
+        "aggregate_floor_ms": 113.41506249999999,
+        "ddr_GB": 58.068512,
+        "sram_GB": 191.120563712,
+        "limiting_ms": {
+          "ddr": 113.4150625
+        }
+      },
+      {
+        "ms": 85.7967585,
+        "aggregate_floor_ms": 85.7967585,
+        "ddr_GB": 43.927940352,
+        "sram_GB": 154.515824128,
+        "limiting_ms": {
+          "ddr": 85.7967585
+        }
+      },
+      {
+        "ms": 71.9876065,
+        "aggregate_floor_ms": 71.9876065,
+        "ddr_GB": 36.857654528,
+        "sram_GB": 136.213454336,
+        "limiting_ms": {
+          "ddr": 71.9876065
+        }
+      },
+      {
+        "ms": 65.0830305,
+        "aggregate_floor_ms": 65.0830305,
+        "ddr_GB": 33.322511616,
+        "sram_GB": 127.06226944,
+        "limiting_ms": {
+          "ddr": 65.0830305
+        }
+      },
+      {
+        "ms": 61.6307425,
+        "aggregate_floor_ms": 61.630742500000004,
+        "ddr_GB": 31.55494016,
+        "sram_GB": 122.486676992,
+        "limiting_ms": {
+          "ddr": 61.6307425
+        }
+      },
+      {
+        "ms": 58.7850465,
+        "aggregate_floor_ms": 58.7850465,
+        "ddr_GB": 30.097943808,
+        "sram_GB": 122.118299136,
+        "limiting_ms": {
+          "ddr": 58.7850465
+        }
+      },
+      {
+        "ms": 58.3872225,
+        "aggregate_floor_ms": 58.3872225,
+        "ddr_GB": 29.89425792,
+        "sram_GB": 119.45616128,
+        "limiting_ms": {
+          "ddr": 58.3872225
+        }
+      },
+      {
+        "ms": 58.3872225,
+        "aggregate_floor_ms": 58.3872225,
+        "ddr_GB": 29.89425792,
+        "sram_GB": 119.310736896,
+        "limiting_ms": {
+          "ddr": 58.3872225
+        }
+      }
+    ],
+    "decode_32_long": [
+      {
+        "ms": 100.74837424999998,
+        "aggregate_floor_ms": 100.74837425,
+        "ddr_GB": 51.583167616,
+        "sram_GB": 169.327936768,
+        "limiting_ms": {
+          "ddr": 100.74837424999998
+        }
+      },
+      {
+        "ms": 93.84379824999999,
+        "aggregate_floor_ms": 93.84379824999999,
+        "ddr_GB": 48.048024704,
+        "sram_GB": 145.610458368,
+        "limiting_ms": {
+          "ddr": 93.84379824999999
+        }
+      },
+      {
+        "ms": 90.39151024999998,
+        "aggregate_floor_ms": 90.39151025,
+        "ddr_GB": 46.280453248,
+        "sram_GB": 133.751719168,
+        "limiting_ms": {
+          "ddr": 90.39151024999998
+        }
+      },
+      {
+        "ms": 88.66536625,
+        "aggregate_floor_ms": 88.66536625,
+        "ddr_GB": 45.39666752,
+        "sram_GB": 127.822349568,
+        "limiting_ms": {
+          "ddr": 88.66536625
+        }
+      },
+      {
+        "ms": 87.24251825000002,
+        "aggregate_floor_ms": 87.24251825,
+        "ddr_GB": 44.668169344,
+        "sram_GB": 126.849565952,
+        "limiting_ms": {
+          "ddr": 87.24251825000002
+        }
+      },
+      {
+        "ms": 87.10991025,
+        "aggregate_floor_ms": 87.10991025,
+        "ddr_GB": 44.600274048,
+        "sram_GB": 124.458779904,
+        "limiting_ms": {
+          "ddr": 87.10991025
+        }
+      },
+      {
+        "ms": 87.04360625,
+        "aggregate_floor_ms": 87.04360625,
+        "ddr_GB": 44.5663264,
+        "sram_GB": 124.153480448,
+        "limiting_ms": {
+          "ddr": 87.04360625
+        }
+      },
+      {
+        "ms": 87.04360625,
+        "aggregate_floor_ms": 87.04360625,
+        "ddr_GB": 44.5663264,
+        "sram_GB": 124.153480448,
+        "limiting_ms": {
+          "ddr": 87.04360625
+        }
+      }
+    ],
+    "prefill_2048": [
+      {
+        "ms": 2588.317156007813,
+        "aggregate_floor_ms": 2588.3171560078126,
+        "ddr_GB": 1325.218383876,
+        "sram_GB": 4453.329162248,
+        "limiting_ms": {
+          "ddr": 2588.317156007813
+        }
+      },
+      {
+        "ms": 1698.5676520078123,
+        "aggregate_floor_ms": 1698.5676520078125,
+        "ddr_GB": 869.666637828,
+        "sram_GB": 3542.140084232,
+        "limiting_ms": {
+          "ddr": 1698.5676520078123
+        }
+      },
+      {
+        "ms": 872.9280518798125,
+        "aggregate_floor_ms": 868.2265320078126,
+        "ddr_GB": 444.531984388,
+        "sram_GB": 2691.943589896,
+        "limiting_ms": {
+          "ddr": 851.8261480078125,
+          "sram": 21.101903871999998
+        }
+      },
+      {
+        "ms": 659.7689350798124,
+        "aggregate_floor_ms": 656.9712360078125,
+        "ddr_GB": 336.369272836,
+        "sram_GB": 2409.181408264,
+        "limiting_ms": {
+          "ddr": 647.9108840078123,
+          "sram": 11.858051072
+        }
+      },
+      {
+        "ms": 452.8265960078125,
+        "aggregate_floor_ms": 452.8265960078125,
+        "ddr_GB": 231.847217156,
+        "sram_GB": 2153.393077256,
+        "limiting_ms": {
+          "ddr": 452.8265960078125
+        }
+      },
+      {
+        "ms": 348.8683465358125,
+        "aggregate_floor_ms": 347.4283240078125,
+        "ddr_GB": 177.883301892,
+        "sram_GB": 2042.574578696,
+        "limiting_ms": {
+          "ddr": 342.0379880078125,
+          "exp": 6.8303585280000005
+        }
+      },
+      {
+        "ms": 265.3314423438125,
+        "aggregate_floor_ms": 245.4706920078125,
+        "ddr_GB": 125.680994308,
+        "sram_GB": 1929.846102024,
+        "limiting_ms": {
+          "ddr": 25.040356007812502,
+          "sram": 233.48641791999998,
+          "exp": 6.804668416
+        }
+      },
+      {
+        "ms": 258.80615389581254,
+        "aggregate_floor_ms": 234.705474305,
+        "ddr_GB": 99.579840516,
+        "sram_GB": 1877.64379444,
+        "limiting_ms": {
+          "ddr": 25.040356007812502,
+          "sram": 226.96112947199998,
+          "exp": 6.804668416
+        }
+      }
+    ],
+    "mixed_32_plus_256": [
+      {
+        "ms": 398.24546225,
+        "aggregate_floor_ms": 398.24546225,
+        "ddr_GB": 203.901676672,
+        "sram_GB": 692.131693824,
+        "limiting_ms": {
+          "ddr": 398.24546225
+        }
+      },
+      {
+        "ms": 272.35925424999994,
+        "aggregate_floor_ms": 272.35925425,
+        "ddr_GB": 139.447938176,
+        "sram_GB": 563.231442176,
+        "limiting_ms": {
+          "ddr": 272.35925424999994
+        }
+      },
+      {
+        "ms": 159.86376624999997,
+        "aggregate_floor_ms": 159.86376625,
+        "ddr_GB": 81.85024832,
+        "sram_GB": 448.045696256,
+        "limiting_ms": {
+          "ddr": 159.86376624999997
+        }
+      },
+      {
+        "ms": 106.80219825,
+        "aggregate_floor_ms": 106.80219824999999,
+        "ddr_GB": 54.682725504,
+        "sram_GB": 371.880477952,
+        "limiting_ms": {
+          "ddr": 106.80219825
+        }
+      },
+      {
+        "ms": 77.01915825000002,
+        "aggregate_floor_ms": 77.01915825,
+        "ddr_GB": 39.433809024,
+        "sram_GB": 341.823505664,
+        "limiting_ms": {
+          "ddr": 77.01915825000002
+        }
+      },
+      {
+        "ms": 62.19394225,
+        "aggregate_floor_ms": 62.19394225,
+        "ddr_GB": 31.843298432,
+        "sram_GB": 315.556513024,
+        "limiting_ms": {
+          "ddr": 62.19394225
+        }
+      },
+      {
+        "ms": 55.192598249999996,
+        "aggregate_floor_ms": 55.19259825,
+        "ddr_GB": 28.258610304,
+        "sram_GB": 308.775929088,
+        "limiting_ms": {
+          "ddr": 55.192598249999996
+        }
+      },
+      {
+        "ms": 53.48439217,
+        "aggregate_floor_ms": 51.51541425,
+        "ddr_GB": 26.375892096,
+        "sram_GB": 296.426784,
+        "limiting_ms": {
+          "ddr": 20.55861425,
+          "sram": 32.925777919999994
+        }
+      }
+    ]
+  },
+  "sensitivity": {
+    "decode_32": {
+      "base": {
+        "ms": 43.202326250000006,
+        "aggregate_floor_ms": 43.20232625,
+        "ddr_GB": 22.11959104,
+        "sram_GB": 76.492358912,
+        "limiting_ms": {
+          "ddr": 43.202326250000006
+        }
+      },
+      "2x_DDR": {
+        "ms": 21.637497717000002,
+        "aggregate_floor_ms": 21.601163125,
+        "ddr_GB": 22.11959104,
+        "sram_GB": 76.492358912,
+        "limiting_ms": {
+          "ddr": 21.501707125000003,
+          "inv": 0.13579059200000002
+        }
+      },
+      "2x_Tensor": {
+        "ms": 43.202326250000006,
+        "aggregate_floor_ms": 43.20232625,
+        "ddr_GB": 22.11959104,
+        "sram_GB": 76.492358912,
+        "limiting_ms": {
+          "ddr": 43.202326250000006
+        }
+      },
+      "half_Tensor": {
+        "ms": 43.202326250000006,
+        "aggregate_floor_ms": 43.20232625,
+        "ddr_GB": 22.11959104,
+        "sram_GB": 76.492358912,
+        "limiting_ms": {
+          "ddr": 43.202326250000006
+        }
+      },
+      "2x_SRAM_BW": {
+        "ms": 43.202326250000006,
+        "aggregate_floor_ms": 43.20232625,
+        "ddr_GB": 22.11959104,
+        "sram_GB": 76.492358912,
+        "limiting_ms": {
+          "ddr": 43.202326250000006
+        }
+      },
+      "4x_capacity": {
+        "ms": 43.00341425000001,
+        "aggregate_floor_ms": 43.00341425,
+        "ddr_GB": 22.017748096,
+        "sram_GB": 73.796273408,
+        "limiting_ms": {
+          "ddr": 43.00341425000001
+        }
+      },
+      "slow_EXP": {
+        "ms": 44.08973898600001,
+        "aggregate_floor_ms": 43.20232625,
+        "ddr_GB": 22.11959104,
+        "sram_GB": 76.492358912,
+        "limiting_ms": {
+          "ddr": 43.003414250000006,
+          "exp": 1.0863247360000001
+        }
+      },
+      "slow_reduce": {
+        "ms": 43.313870528,
+        "aggregate_floor_ms": 43.20232625,
+        "ddr_GB": 22.11959104,
+        "sram_GB": 76.492358912,
+        "limiting_ms": {
+          "ddr": 43.131448000000006,
+          "reduce": 0.182422528
+        }
+      },
+      "balanced_prefill": {
+        "ms": 21.538041717000002,
+        "aggregate_floor_ms": 21.501707125,
+        "ddr_GB": 22.017748096,
+        "sram_GB": 73.796273408,
+        "limiting_ms": {
+          "ddr": 21.402251125,
+          "inv": 0.13579059200000002
+        }
+      }
+    },
+    "prefill_2048": {
+      "base": {
+        "ms": 452.8265960078125,
+        "aggregate_floor_ms": 452.8265960078125,
+        "ddr_GB": 231.847217156,
+        "sram_GB": 2153.393077256,
+        "limiting_ms": {
+          "ddr": 452.8265960078125
+        }
+      },
+      "2x_DDR": {
+        "ms": 281.16076168390623,
+        "aggregate_floor_ms": 268.803692417,
+        "ddr_GB": 231.964657668,
+        "sram_GB": 2150.429539336,
+        "limiting_ms": {
+          "ddr": 6.154994003906251,
+          "sram": 259.587571712,
+          "exp": 6.727598079999999,
+          "inv": 8.690597888000001
+        }
+      },
+      "2x_Tensor": {
+        "ms": 452.8265960078125,
+        "aggregate_floor_ms": 452.8265960078125,
+        "ddr_GB": 231.847217156,
+        "sram_GB": 2153.393077256,
+        "limiting_ms": {
+          "ddr": 452.8265960078125
+        }
+      },
+      "half_Tensor": {
+        "ms": 459.4032646798124,
+        "aggregate_floor_ms": 453.0559720078125,
+        "ddr_GB": 231.964657668,
+        "sram_GB": 2150.429539336,
+        "limiting_ms": {
+          "ddr": 324.37603600781244,
+          "tensor": 135.02722867199998
+        }
+      },
+      "2x_SRAM_BW": {
+        "ms": 450.98333047181245,
+        "aggregate_floor_ms": 449.3859560078125,
+        "ddr_GB": 230.085609476,
+        "sram_GB": 2197.96175156,
+        "limiting_ms": {
+          "ddr": 443.9956200078125,
+          "exp": 6.987710464
+        }
+      },
+      "4x_capacity": {
+        "ms": 265.3314423438125,
+        "aggregate_floor_ms": 245.4706920078125,
+        "ddr_GB": 125.680994308,
+        "sram_GB": 1929.846102024,
+        "limiting_ms": {
+          "ddr": 25.040356007812502,
+          "sram": 233.48641791999998,
+          "exp": 6.804668416
+        }
+      },
+      "slow_EXP": {
+        "ms": 606.5819163278125,
+        "aggregate_floor_ms": 504.43619600781255,
+        "ddr_GB": 258.271332356,
+        "sram_GB": 2194.449546248,
+        "limiting_ms": {
+          "ddr": 431.2652520078125,
+          "exp": 175.31666432
+        }
+      },
+      "slow_reduce": {
+        "ms": 498.49642793600003,
+        "aggregate_floor_ms": 475.07606800781247,
+        "ddr_GB": 243.23894682,
+        "sram_GB": 2289.277254664,
+        "limiting_ms": {
+          "ddr": 440.782936,
+          "reduce": 57.713491936
+        }
+      },
+      "balanced_prefill": {
+        "ms": 230.3567301959062,
+        "aggregate_floor_ms": 215.49717504,
+        "ddr_GB": 127.5600425,
+        "sram_GB": 1933.295917064,
+        "limiting_ms": {
+          "ddr": 6.154994003906251,
+          "tensor": 208.80923033599996,
+          "exp": 6.701907968,
+          "inv": 8.690597888000001
+        }
+      }
+    }
+  },
+  "prefill_512_chunks": [
+    {
+      "ms": 111.24537939199999,
+      "aggregate_floor_ms": 111.12679200000001,
+      "ddr_GB": 56.896917504,
+      "sram_GB": 532.03920896,
+      "limiting_ms": {
+        "ddr": 110.467336,
+        "sram": 0.778043392
+      }
+    },
+    {
+      "ms": 112.273672,
+      "aggregate_floor_ms": 112.273672,
+      "ddr_GB": 57.484120064,
+      "sram_GB": 534.302232576,
+      "limiting_ms": {
+        "ddr": 112.273672
+      }
+    },
+    {
+      "ms": 113.076488,
+      "aggregate_floor_ms": 113.076488,
+      "ddr_GB": 57.895161856,
+      "sram_GB": 540.47107072,
+      "limiting_ms": {
+        "ddr": 113.076488
+      }
+    },
+    {
+      "ms": 116.0094440078125,
+      "aggregate_floor_ms": 116.0094440078125,
+      "ddr_GB": 59.396835332,
+      "sram_GB": 548.089543688,
+      "limiting_ms": {
+        "ddr": 116.0094440078125
+      }
+    }
+  ],
+  "isolated_partial_chunk": {
+    "ms": 57.241352,
+    "aggregate_floor_ms": 57.241352,
+    "ddr_GB": 29.307572224,
+    "sram_GB": 274.93394432,
+    "limiting_ms": {
+      "ddr": 57.241352
+    }
+  }
+}
