@@ -388,11 +388,11 @@ python3 -B scripts/pingpong_tradeoff.py --kib 320 --x-bytes 1 --w-bytes 1
 按每个 query 行维护最大值 $`m`$、分母 $`\ell`$、未归一化向量分子 $`U`$。第 $`j`$ 个 KV 板的分数、块权重和局部输出依次为
 
 ```math
-S_j=QK_j^\top/\sqrt d,\quad m'=\max(m,\operatorname{rowmax}S_j),\quad
+S_j=QK_j^\top/\sqrt d,\quad m'=\max(m,\mathrm{rowmax}S_j),\quad
 P_j=\exp(S_j-m'),\quad Z_j=P_jV_j.
 ```
 
-更新 $`\alpha=\exp(m-m')`$，$`\ell'=\alpha\ell+\operatorname{rowsum}P_j`$，$`U'=\alpha U+Z_j`$。行标量在该行所有输出维度上广播。首板直接令 $`\ell=\operatorname{rowsum}P_1,\ U=Z_1`$，免去空历史的读写。末板输出 $`O=U/\ell`$。这里 $`P_j`$ 还没有除以分母；只在最后做一次归一化。表内矩阵乘按 2 FLOP/乘加计数；max/sum 每行 64 个输入各需 63 次二元操作。
+更新 $`\alpha=\exp(m-m')`$，$`\ell'=\alpha\ell+\mathrm{rowsum}P_j`$，$`U'=\alpha U+Z_j`$。行标量在该行所有输出维度上广播。首板直接令 $`\ell=\mathrm{rowsum}P_1,\ U=Z_1`$，免去空历史的读写。末板输出 $`O=U/\ell`$。这里 $`P_j`$ 还没有除以分母；只在最后做一次归一化。表内矩阵乘按 2 FLOP/乘加计数；max/sum 每行 64 个输入各需 63 次二元操作。
 
 ### 5.3 逐步计算单槽时间
 
