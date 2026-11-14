@@ -21,6 +21,24 @@ class Rates:
     tensor_tflops: float = 128
     overlap: float = 1
     switch_ns: float = 0
+    dma_gbs: float | None = None
+    ddr_ns: float = 0
+    dma_ns: float = 0
+    sram_ns: float = 0
+    tensor_ns: float = 0
+    x_bytes: int = 2
+    w_bytes: int = 2
+    y_bytes: int = 2
+
+    def footprint(self, m, n, k, slots):
+        return (max(4, self.y_bytes) * m * n
+                + k * (slots[0] * self.x_bytes * m + slots[1] * self.w_bytes * n))
+
+    def transfer_ns(self, size):
+        if size == 0:
+            return 0.0
+        bandwidth = min(self.ddr_gbs, self.sram_gbs, self.dma_gbs or self.ddr_gbs)
+        return self.ddr_ns + self.dma_ns + self.sram_ns + size / bandwidth
 
 
 def edge_sizes(length, tile):
@@ -33,53 +51,59 @@ def evaluate(shape, tile, slots, rates):
     m, n, k = tile
     bx, bw = slots
     panels = ceildiv(inner, k)
-    cap = 4 * m * n + 2 * k * (bx * m + bw * n)
+    cap = rates.footprint(m, n, k, slots)
     sums = Counter()
     slabs = panels - 1
 
     for (r, nr), (c, nc) in product(edge_sizes(rows, m), edge_sizes(cols, n)):
         count = nr * nc
-        out = 2 * r * c
+        out = rates.y_bytes * r * c
         # The last compute phase writes Y into SRAM; the drain reads it once.
-        drain = max(out / rates.ddr_gbs, out / rates.sram_gbs)
+        drain = rates.transfer_ns(out)
         serial = drain
         saved = 0.0
+        split_cost = 0.0
         # All interior panels have the same cost; only the first, penultimate,
         # and last can have different accumulator I/O or a different next extent.
         indices = sorted({0, min(1, slabs), max(0, slabs - 1), slabs})
         for lo, hi in zip(indices, indices[1:] + [panels]):
             current = min(k, inner - lo * k)
-            source = 2 * current * (r + c)
+            source = current * (rates.x_bytes * r + rates.w_bytes * c)
             partial_io = 4 * r * c * (int(lo > 0) + int(lo < slabs))
             core_io = source + partial_io + (out if lo == slabs else 0)
-            dma_time = max(source / rates.ddr_gbs, source / rates.sram_gbs)
-            engine_time = max(2 * r * c * current / (1000 * rates.tensor_tflops),
-                              core_io / rates.sram_gbs)
+            dma_time = rates.transfer_ns(source)
+            engine_time = max(rates.tensor_ns + 2 * r * c * current / (1000 * rates.tensor_tflops),
+                              rates.sram_ns + core_io / rates.sram_gbs)
             serial += (hi - lo) * (dma_time + engine_time)
             if lo < slabs:
                 following = min(k, inner - (lo + 1) * k)
-                prefetch = 2 * following * ((bx - 1) * r + (bw - 1) * c)
-                early_time = max(prefetch / rates.ddr_gbs, prefetch / rates.sram_gbs)
-                shared_time = (prefetch + core_io) / rates.sram_gbs
+                prefetch = following * ((bx - 1) * rates.x_bytes * r + (bw - 1) * rates.w_bytes * c)
+                early_time = rates.transfer_ns(prefetch)
+                shared_time = rates.sram_ns + (prefetch + core_io) / rates.sram_gbs
+                if bx != bw:
+                    # Issuing separate early and late loads starts the path twice.
+                    split_cost += (hi - lo) * (rates.ddr_ns + rates.dma_ns + rates.sram_ns)
                 joint = max(early_time, engine_time, shared_time)
                 saved += (hi - lo) * max(0.0, early_time + engine_time - joint)
         sums["serial_ns"] += count * serial
         sums["raw_saved_ns"] += count * saved
+        sums["split_ns"] += count * split_cost
         sums["output_tiles"] += count
-    x_bytes = 2 * rows * inner * ceildiv(cols, n)
-    w_bytes = 2 * inner * cols * ceildiv(rows, m)
-    y_bytes = 2 * rows * cols
+    x_bytes = rates.x_bytes * rows * inner * ceildiv(cols, n)
+    w_bytes = rates.w_bytes * inner * cols * ceildiv(rows, m)
+    y_bytes = rates.y_bytes * rows * cols
     ddr = x_bytes + w_bytes + y_bytes
     # Same SRAM ledger as the parent model for stream_panels, including DMA.
     sram = 2 * ddr + 8 * rows * cols * (panels - 1)
     switches = sums["output_tiles"] * (panels - 1) if slots != (1, 1) else 0
     captured = rates.overlap * sums["raw_saved_ns"]
-    total = sums["serial_ns"] - captured + switches * rates.switch_ns
+    total = sums["serial_ns"] - captured + sums["split_ns"] + switches * rates.switch_ns
     return dict(tile=tile, slots=slots, bytes_required=cap, ddr_bytes=ddr, sram_bytes=sram,
                 x_bytes=x_bytes, w_bytes=w_bytes, y_bytes=y_bytes,
                 output_tiles=sums["output_tiles"], switches=switches, serial_ms=sums["serial_ns"]/1e6,
                 possible_overlap_ms=sums["raw_saved_ns"]/1e6, captured_overlap_ms=captured/1e6,
-                switch_ms=switches*rates.switch_ns/1e6, ms=total/1e6)
+                split_startup_ms=sums["split_ns"]/1e6, switch_ms=switches*rates.switch_ns/1e6,
+                ms=total/1e6)
 
 
 def compare(shape, kib, panels, rates, quantum=0):
@@ -93,6 +117,13 @@ def compare(shape, kib, panels, rates, quantum=0):
         raise ValueError("overlap must be in [0,1] and switch-ns finite and nonnegative")
     if quantum < 0:
         raise ValueError("tile quantum must be nonnegative")
+    if rates.dma_gbs is not None and not (math.isfinite(rates.dma_gbs) and rates.dma_gbs > 0):
+        raise ValueError("DMA bandwidth must be finite and positive")
+    if not all(math.isfinite(v) and v >= 0 for v in
+               (rates.ddr_ns, rates.dma_ns, rates.sram_ns, rates.tensor_ns)):
+        raise ValueError("startup latencies must be finite and nonnegative")
+    if min(rates.x_bytes, rates.w_bytes, rates.y_bytes) < 1:
+        raise ValueError("byte widths must be positive integers")
     def dimensions(size):
         limit = min(size, 4096)
         if quantum:
@@ -104,7 +135,7 @@ def compare(shape, kib, panels, rates, quantum=0):
         options = []
         for m, n, k in product(dimensions(rows), dimensions(cols),
                                sorted({min(inner, v) for v in panels})):
-            if 4*m*n + 2*k*(slots[0]*m + slots[1]*n) <= kib*1024:
+            if rates.footprint(m, n, k, slots) <= kib*1024:
                 options.append(evaluate(shape, (m, n, k), slots, rates))
         if options:
             best[name] = min(options, key=lambda v: (v["ms"], v["ddr_bytes"], v["bytes_required"]))
@@ -125,11 +156,16 @@ def main():
     parser.add_argument("--ddr-gbs", type=float, default=512)
     parser.add_argument("--sram-gbs", type=float, default=8000)
     parser.add_argument("--tensor-tflops", type=float, default=128)
+    parser.add_argument("--dma-gbs", type=float, help="DMA rate; default follows DDR")
+    for unit in ("ddr", "dma", "sram", "tensor"):
+        parser.add_argument(f"--{unit}-ns", type=float, default=0, help="per logical service startup")
+    for matrix in ("x", "w", "y"):
+        parser.add_argument(f"--{matrix}-bytes", type=int, default=2, help="bytes per element")
     parser.add_argument("--overlap", type=float, default=1, help="fraction of feasible overlap captured")
     parser.add_argument("--switch-ns", type=float, default=0,
                         help="extra unhidden overhead per overlapped panel boundary")
     args = parser.parse_args()
-    rates = Rates(args.ddr_gbs, args.sram_gbs, args.tensor_tflops, args.overlap, args.switch_ns)
+    rates = Rates(**{field: getattr(args, field) for field in Rates.__dataclass_fields__})
     try:
         results = {kib: compare(args.shape, kib, args.panels, rates, args.tile_quantum)
                    for kib in args.kib}
