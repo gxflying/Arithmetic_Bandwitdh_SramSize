@@ -430,3 +430,9 @@ python3 -B scripts/pingpong_tradeoff.py --kib 64 --tile-quantum 16 --ddr-read-gb
 ~~~
 
 脚本输出每种方案的 tile、占用、输入/权重/输出字节、引擎读与写、DMA 对 SRAM 的读与写、串行时间、重叠时间和切换次数。对分方向字节账目及时间的独立逐板核验见 [方向性回归测试](scripts/test_pingpong_ports.py)。各表和图是指定端口速率下的模型值；实际阵列仍需校准读写可并行程度、各自的启动延迟和 bank 映射。
+
+## 6. 固定参数、扫描参数与性能曲线
+
+使用统一 JSON 入口时，将已知的容量、算子维度、数据类型和硬件规格填入 `fixed`，其余待探索的参数在 `sweep` 中逐项给出取值列表。每个配置点先固定容量，再从 `tiles` 中独立选择各缓冲策略的最快可行分块。部分和类型可以单独设置，本文 FP32 算例对应 `"partial_dtype":"fp32"`。逐个字段的名称、单位、所影响的事件和运行命令见[完整参数表与扫描说明](perf_sweep.md)。
+
+固定 112 KiB、32×64 tile 的 FlashAttention 示例扫描了 225 组 SRAM 读写带宽和启动延迟。参考点读写各 4000 GB/s、启动均为零时，双槽为 214.032 ns；只把读带宽加倍可降至 209.168 ns，只把写带宽加倍仍为 214.032 ns。GEMM 示例则同时扫描容量和部分和类型，用结果表中的 tile 和四向字节解释容量台阶。[FlashAttention 配置](configs/flashattention_sram.json) · [SRAM 端口性能曲线](artifacts/sweeps/flashattention_sram/curves.png) · [GEMM 容量配置](configs/gemm_capacity.json)

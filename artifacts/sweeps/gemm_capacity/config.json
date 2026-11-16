@@ -1,0 +1,66 @@
+{
+  "kernel": "gemm",
+  "fixed": {
+    "M": 2048,
+    "K": 3584,
+    "N": 37888,
+    "x_dtype": "bf16",
+    "w_dtype": "bf16",
+    "y_dtype": "bf16",
+    "ddr_read_gbs": 512,
+    "ddr_write_gbs": 512,
+    "ddr_read_ns": 0,
+    "ddr_write_ns": 0,
+    "dma_gbs": 1024,
+    "dma_ns": 0,
+    "tensor_tflops": 128,
+    "tensor_ns": 0,
+    "sram_read_gbs": 4000,
+    "sram_write_gbs": 4000,
+    "sram_read_ns": 0,
+    "sram_write_ns": 0
+  },
+  "sweep": {
+    "capacity_kib": [
+      64,
+      320,
+      352,
+      384,
+      512
+    ],
+    "partial_dtype": [
+      "fp32",
+      "bf16"
+    ]
+  },
+  "tiles": {
+    "m": [
+      16,
+      32,
+      64,
+      128,
+      256,
+      512,
+      1024,
+      2048
+    ],
+    "n": [
+      16,
+      32,
+      64,
+      128,
+      256,
+      512,
+      1024,
+      2048,
+      4096
+    ],
+    "k": [
+      64
+    ]
+  },
+  "plot_at": {
+    "capacity_kib": 320,
+    "partial_dtype": "fp32"
+  }
+}

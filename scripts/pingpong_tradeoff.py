@@ -33,9 +33,10 @@ class Rates:
     x_bytes: int = 2
     w_bytes: int = 2
     y_bytes: int = 2
+    partial_bytes: int = 4
 
     def footprint(self, m, n, k, slots):
-        return (max(4, self.y_bytes) * m * n
+        return (max(self.partial_bytes, self.y_bytes) * m * n
                 + k * (slots[0] * self.x_bytes * m + slots[1] * self.w_bytes * n))
 
     def transfer_ns(self, size, *, to_sram):
@@ -77,8 +78,8 @@ def evaluate(shape, tile, slots, rates):
         for lo, hi in zip(indices, indices[1:] + [panels]):
             current = min(k, inner - lo * k)
             source = current * (rates.x_bytes * r + rates.w_bytes * c)
-            engine_read = source + (4 * r * c if lo > 0 else 0)
-            engine_write = 4 * r * c if lo < slabs else out
+            engine_read = source + (rates.partial_bytes * r * c if lo > 0 else 0)
+            engine_write = rates.partial_bytes * r * c if lo < slabs else out
             dma_time = rates.transfer_ns(source, to_sram=True)
             engine_time = max(rates.tensor_ns + 2 * r * c * current / (1000 * rates.tensor_tflops),
                               rates.sram_read_ns + engine_read / rates.sram_read_gbs,
@@ -102,7 +103,7 @@ def evaluate(shape, tile, slots, rates):
     w_bytes = rates.w_bytes * inner * cols * ceildiv(rows, m)
     y_bytes = rates.y_bytes * rows * cols
     ddr = x_bytes + w_bytes + y_bytes
-    partial = 4 * rows * cols * (panels - 1)
+    partial = rates.partial_bytes * rows * cols * (panels - 1)
     sram_read = x_bytes + w_bytes + partial + y_bytes
     sram_write = x_bytes + w_bytes + partial + y_bytes
     switches = sums["output_tiles"] * (panels - 1) if slots != (1, 1) else 0
@@ -139,7 +140,7 @@ def compare(shape, kib, panels, rates, quantum=0):
                (rates.ddr_read_ns, rates.ddr_write_ns, rates.dma_ns,
                 rates.sram_read_ns, rates.sram_write_ns, rates.tensor_ns)):
         raise ValueError("startup latencies must be finite and nonnegative")
-    if min(rates.x_bytes, rates.w_bytes, rates.y_bytes) < 1:
+    if min(rates.x_bytes, rates.w_bytes, rates.y_bytes, rates.partial_bytes) < 1:
         raise ValueError("byte widths must be positive integers")
     def dimensions(size):
         limit = min(size, 4096)
@@ -184,6 +185,7 @@ def main():
         parser.add_argument(f"--{unit}-ns", type=float, default=0, help="per logical service startup")
     for matrix in ("x", "w", "y"):
         parser.add_argument(f"--{matrix}-bytes", type=int, default=2, help="bytes per element")
+    parser.add_argument("--partial-bytes", type=int, default=4, help="bytes per stored partial sum")
     parser.add_argument("--overlap", type=float, default=1, help="fraction of feasible overlap captured")
     parser.add_argument("--switch-ns", type=float, default=0,
                         help="extra unhidden overhead per overlapped panel boundary")

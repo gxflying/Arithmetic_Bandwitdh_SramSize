@@ -1,0 +1,22 @@
+{
+  "kernel": "flashattention",
+  "fixed": {
+    "capacity_kib": 112,
+    "q_len": 32, "kv_len": 128, "d": 128, "dv": 128,
+    "q_dtype": "bf16", "k_dtype": "bf16", "v_dtype": "bf16", "out_dtype": "bf16",
+    "score_dtype": "fp32", "prob_dtype": "bf16", "partial_dtype": "fp32",
+    "ddr_read_gbs": 512, "ddr_write_gbs": 256, "ddr_read_ns": 0, "ddr_write_ns": 0,
+    "dma_gbs": 1024, "dma_ns": 0, "tensor_tflops": 128, "tensor_ns": 0,
+    "vec_add_gops": 2000, "vec_mul_gops": 2000, "vec_reduce_gops": 1000,
+    "vec_exp_gops": 250, "vec_inv_gops": 125,
+    "vec_add_ns": 0, "vec_mul_ns": 0, "vec_reduce_ns": 0, "vec_exp_ns": 0, "vec_inv_ns": 0
+  },
+  "sweep": {
+    "sram_read_gbs": [1000, 2000, 4000, 6000, 8000],
+    "sram_write_gbs": [1000, 2000, 4000, 6000, 8000],
+    "sram_read_ns": [0, 2, 8],
+    "sram_write_ns": [0, 2, 8]
+  },
+  "tiles": {"r": [32], "c": [64]},
+  "plot_at": {"sram_read_gbs": 4000, "sram_write_gbs": 4000, "sram_read_ns": 0, "sram_write_ns": 0}
+}

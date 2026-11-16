@@ -33,8 +33,8 @@ def replay(shape, tile, slots, cfg):
             for offset in range(0, inner, k):
                 v = min(inner-offset, k)
                 x, w = cfg.x_bytes*r*v, cfg.w_bytes*c*v
-                rd = x+w + (4*r*c if offset else 0)
-                wr = y if offset+v == inner else 4*r*c
+                rd = x+w + (cfg.partial_bytes*r*c if offset else 0)
+                wr = y if offset+v == inner else cfg.partial_bytes*r*c
                 engine_r += rd
                 engine_w += wr
                 dma_w += x+w
@@ -106,7 +106,7 @@ class PortTiming(unittest.TestCase):
     def test_directional_replay(self):
         configs = [
             Rates(),
-            Rates(sram_read_gbs=2, sram_write_gbs=91, dma_gbs=40, y_bytes=8),
+            Rates(sram_read_gbs=2, sram_write_gbs=91, dma_gbs=40, y_bytes=8, partial_bytes=2),
             Rates(sram_read_gbs=71, sram_write_gbs=3, sram_read_ns=4, sram_write_ns=11,
                   dma_ns=2, ddr_read_ns=3, ddr_write_ns=8, tensor_ns=5, x_bytes=1, w_bytes=4, y_bytes=2),
             Rates(sram_read_gbs=5, sram_write_gbs=33, overlap=0.5, switch_ns=1.5),
